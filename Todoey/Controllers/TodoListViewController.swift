@@ -7,18 +7,22 @@
 //
 
 import UIKit
+import CoreData
 
 class TodoListViewController: UITableViewController {
 
     //Creating a file path to the documents folder
     let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
     
+    //Creating an objet of Context in DataModel 
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    
     var itemArray = [Item]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
-        
+        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
         
         loadItems()
         
@@ -75,8 +79,10 @@ class TodoListViewController: UITableViewController {
             // What will happen once the user clicks the Add Item button in the UIAlert
             if textField.text! != "" {
                 
-                let newItem = Item()
+                
+                let newItem = Item(context: self.context)
                 newItem.title = textField.text!
+                newItem.done = false
                 self.itemArray.append(newItem)
 
                 self.saveItems()
@@ -102,27 +108,25 @@ class TodoListViewController: UITableViewController {
     
     //MARK: - Model Manipulation Methods
     
-    // Function to save data to PList and reload Table View
+    //Function to save data from context to database (DataCore)
     func saveItems(){
-        let encoder = PropertyListEncoder()
+        
         do {
-            let data = try encoder.encode(itemArray)
-            try data.write(to: dataFilePath!)
+            try self.context.save()
         } catch {
-            print("Error. Encoding item array, \(error)")
+            print("Error saving context: \(error)")
         }
         
         self.tableView.reloadData()
     }
     
-    //Function to load data from PList
+    //Function to load data to array from database (DataCore)
     func loadItems(){
+        let request: NSFetchRequest<Item> = Item.fetchRequest()
         do {
-            let data = try Data(contentsOf: dataFilePath!)
-            let decoder = PropertyListDecoder()
-            itemArray = try decoder.decode([Item].self, from: data)
+            try itemArray = context.fetch(request)
         } catch {
-            print("Error loading data from PList, \(error)")
+            print("Error fetching data from context: \(error)")
         }
     }
     
