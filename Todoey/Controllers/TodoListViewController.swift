@@ -9,21 +9,23 @@
 import UIKit
 import CoreData
 
-class TodoListViewController: UITableViewController {
+class TodoListViewController: UITableViewController{
 
     //Creating a file path to the documents folder
-    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+    //let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
     
-    //Creating an objet of Context in DataModel 
+    //Creating an objet of Context in DataModel
+    let appDelegate = UIApplication.shared.delegate as! AppDelegate
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
-    
     var itemArray = [Item]()
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
-        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
         
+        //print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
+
         loadItems()
         
     }
@@ -62,7 +64,6 @@ class TodoListViewController: UITableViewController {
         // Make every row animated selection
         tableView.deselectRow(at: indexPath, animated: true)
         
-
     }
     
     //MARK: - Add new Items
@@ -72,9 +73,9 @@ class TodoListViewController: UITableViewController {
         var textField = UITextField()
         
         //Creating and configure alert window
-        let alert = UIAlertController(title: "Add new todoye item", message: "aaa", preferredStyle: .alert)
-        //Configure action button and make the action to it
-        let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
+        let alert = UIAlertController(title: "Add new todoey item", message: "", preferredStyle: .alert)
+        //Configure Add button and set things to do when press
+        let saveAction = UIAlertAction(title: "Add Item", style: .default) { (action) in
             
             // What will happen once the user clicks the Add Item button in the UIAlert
             if textField.text! != "" {
@@ -92,14 +93,22 @@ class TodoListViewController: UITableViewController {
             
         }
         
+        //Configure Cancel button
+        let cancelAction = UIAlertAction(title: "Cancel", style: .default) { (action) in
+            self.dismiss(animated: true, completion: nil)
+            
+        }
+        
+        
         //Add the text field to the alert
         alert.addTextField { (alertTextField) in
             alertTextField.placeholder = "Create new Item"
             textField = alertTextField
         }
         
-        //Add the action button to the alert
-        alert.addAction(action)
+        //Add the action buttons to the alert
+        alert.addAction(saveAction)
+        alert.addAction(cancelAction)
         //Show the alert
         present(alert, animated: true, completion: nil)
         
@@ -120,13 +129,62 @@ class TodoListViewController: UITableViewController {
         self.tableView.reloadData()
     }
     
-    //Function to load data to array from database (DataCore)
-    func loadItems(){
-        let request: NSFetchRequest<Item> = Item.fetchRequest()
+    //Function to load data to array from database (DataCore) with default value  = Item.fetchRequest()
+    func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest()){
         do {
             try itemArray = context.fetch(request)
         } catch {
             print("Error fetching data from context: \(error)")
+        }
+        tableView.reloadData()
+    }
+    
+
+    
+}
+
+//MARK: - SearchBar methods
+extension TodoListViewController: UISearchBarDelegate{
+    
+    func closeKeyboard(){
+        
+    }
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        
+        //Create a search predicate for request from CoreData
+        //[cd] means Case Diacritic (Insensitive) search
+        if searchBar.text != "" {
+            let request: NSFetchRequest<Item> = Item.fetchRequest()
+            request.predicate = NSPredicate.init(format: "title CONTAINS[cd] %@", searchBar.text!)
+            request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
+            
+            loadItems(with: request)
+            
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder()
+            }
+
+        } else{
+            //Show all records if no search entry
+            let request: NSFetchRequest<Item> = Item.fetchRequest()
+            request.predicate = nil
+            loadItems(with: request)
+            
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder()
+            }
+        }
+    }
+    
+    //Show all records if no search entry
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchBar.text?.count == 0{
+            loadItems()
+            
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder()
+            }
         }
     }
     
