@@ -146,8 +146,11 @@ class TodoListViewController: UITableViewController{
 //MARK: - SearchBar methods
 extension TodoListViewController: UISearchBarDelegate{
     
-    func closeKeyboard(){
-        
+    //Hides keyboard and focuses to main window
+    func closeKeyboard(_ searchBar: UISearchBar){
+        DispatchQueue.main.async {
+            searchBar.resignFirstResponder()
+        }
     }
     
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
@@ -161,9 +164,7 @@ extension TodoListViewController: UISearchBarDelegate{
             
             loadItems(with: request)
             
-            DispatchQueue.main.async {
-                searchBar.resignFirstResponder()
-            }
+            closeKeyboard(searchBar)
 
         } else{
             //Show all records if no search entry
@@ -171,9 +172,7 @@ extension TodoListViewController: UISearchBarDelegate{
             request.predicate = nil
             loadItems(with: request)
             
-            DispatchQueue.main.async {
-                searchBar.resignFirstResponder()
-            }
+            closeKeyboard(searchBar)
         }
     }
     
@@ -182,9 +181,7 @@ extension TodoListViewController: UISearchBarDelegate{
         if searchBar.text?.count == 0{
             loadItems()
             
-            DispatchQueue.main.async {
-                searchBar.resignFirstResponder()
-            }
+            closeKeyboard(searchBar)
         }
     }
     
