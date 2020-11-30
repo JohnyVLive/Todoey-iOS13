@@ -15,7 +15,7 @@ class TodoListViewController: UITableViewController{
     //let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
     
     //Creating an objet of Context in DataModel
-    let appDelegate = UIApplication.shared.delegate as! AppDelegate
+    //let appDelegate = UIApplication.shared.delegate as! AppDelegate
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     var itemArray = [Item]()
     
@@ -59,7 +59,7 @@ class TodoListViewController: UITableViewController{
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         
         //Save data after every change
-        self.saveItems()
+        saveItems()
 
         // Make every row animated selection
         tableView.deselectRow(at: indexPath, animated: true)
@@ -126,7 +126,7 @@ class TodoListViewController: UITableViewController{
             print("Error saving context: \(error)")
         }
         
-        self.tableView.reloadData()
+        tableView.reloadData()
     }
     
     //Function to load data to array from database (DataCore) with default value  = Item.fetchRequest()
