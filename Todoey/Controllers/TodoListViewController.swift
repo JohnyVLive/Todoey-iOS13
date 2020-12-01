@@ -18,15 +18,20 @@ class TodoListViewController: UITableViewController{
     //let appDelegate = UIApplication.shared.delegate as! AppDelegate
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     var itemArray = [Item]()
+    var selectedCategory: Category? {
+        didSet{
+            loadItems()
+        }
+    }
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         
-        //print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
-
-        loadItems()
+        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
+        
+//        print(selectedCategory!.name!)
         
     }
     
@@ -80,19 +85,23 @@ class TodoListViewController: UITableViewController{
             // What will happen once the user clicks the Add Item button in the UIAlert
             if textField.text! != "" {
                 
-                
+
                 let newItem = Item(context: self.context)
+                
                 newItem.title = textField.text!
                 newItem.done = false
+                newItem.parentCategory = self.selectedCategory
+                
                 self.itemArray.append(newItem)
 
                 self.saveItems()
                 
                 self.tableView.reloadData()
+                
+                //TODO: ----- After creation of new item make the search results to be reseted
             }
             
         }
-        
         //Configure Cancel button
         let cancelAction = UIAlertAction(title: "Cancel", style: .default) { (action) in
             self.dismiss(animated: true, completion: nil)
@@ -130,7 +139,21 @@ class TodoListViewController: UITableViewController{
     }
     
     //Function to load data to array from database (DataCore) with default value  = Item.fetchRequest()
-    func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest()){
+    func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest(), predicate: NSPredicate? = nil){
+        
+        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
+        if let additionalPredicate = predicate{
+            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, additionalPredicate])
+        } else {
+            request.predicate = categoryPredicate
+        }
+
+        
+//        if request.predicate == nil{
+//            request.predicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
+//        }
+        
+
         do {
             try itemArray = context.fetch(request)
         } catch {
@@ -159,7 +182,7 @@ extension TodoListViewController: UISearchBarDelegate{
         //[cd] means Case Diacritic (Insensitive) search
         if searchBar.text != "" {
             let request: NSFetchRequest<Item> = Item.fetchRequest()
-            request.predicate = NSPredicate.init(format: "title CONTAINS[cd] %@", searchBar.text!)
+            request.predicate = NSPredicate.init(format: "title CONTAINS[cd] %@ AND", searchBar.text!, selectedCategory!.name!)
             request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
             
             loadItems(with: request)
